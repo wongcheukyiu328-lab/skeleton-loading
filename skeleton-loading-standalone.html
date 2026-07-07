@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AIR · Skeleton loading demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Standalone: AIR token values inlined so the file works on any static host
+     (no build step, no web components, no external CSS). */
+  :root {
+    --air-container-primary: #f7f7f7;
+    --air-container-secondary: #ffffff;
+    --air-surface-dim: #E3E9EA;
+    --air-status-success-5: #dcefeb;
+    --air-text-primary: #002536;
+    --air-text-secondary: #798B95;
+    --air-icon-secondary: #798B95;
+    --air-outline-default: #9FB3BF;
+    --air-corner-logo-image: 16px;
+    --air-corner-button: 999px;
+    --air-button-primary: #002536;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 400 15px/1.5 'DM Sans', sans-serif;
+    background: #DCE3E6;
+    color: var(--air-text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+    gap: 24px;
+  }
+  .page-title { font: 600 24px/1.3 Poppins, sans-serif; letter-spacing: -0.03em; margin: 0; }
+  .page-sub { font: 400 15px/1.5 'DM Sans', sans-serif; color: var(--air-text-secondary); margin: 0; max-width: 560px; text-align: center; }
+
+  /* ── Modal shell (light verify sheet) ── */
+  .modal {
+    width: 393px;
+    background: var(--air-container-primary);
+    border-radius: 28px;
+    padding: 20px 32px 32px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    box-shadow: 0 24px 60px rgba(0,37,54,0.16);
+  }
+  .modal .close {
+    position: absolute; top: 16px; right: 16px;
+    width: 24px; height: 24px; color: var(--air-icon-secondary);
+    border: none; background: none; cursor: pointer; line-height: 0;
+  }
+
+  #content { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
+
+  .head { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .logo { width: 60px; height: 60px; border-radius: var(--air-corner-logo-image); overflow: hidden; }
+  .logo.real { background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,37,54,0.08); }
+  .logo.real img { width: 36px; height: 36px; object-fit: contain; }
+  .title { font: 500 19px/1.3 Poppins, sans-serif; color: var(--air-text-primary); letter-spacing: -0.04em; margin: 0; text-align: center; }
+
+  .data { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+  .data-card { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+  .row-item {
+    background: var(--air-container-secondary); padding: 16px;
+    border-radius: 16px 16px 0 0;
+    display: flex; align-items: center; gap: 8px;
+    min-height: 50px;
+  }
+  .row-item .grow { flex: 1; }
+  .row-item .k { font: 500 14px/1.3 Poppins, sans-serif; color: var(--air-text-primary); letter-spacing: -0.02em; margin: 0; }
+  .row-item .chev { width: 16px; height: 16px; color: var(--air-icon-secondary); flex: none; }
+  .note {
+    background: var(--air-container-secondary); padding: 8px 16px;
+    border-radius: 0 0 16px 16px;
+  }
+  .note p { font: 400 12px/1.4 'DM Sans', sans-serif; color: var(--air-text-secondary); margin: 0; }
+  .note b { font-weight: 700; color: #000; }
+
+  .pill {
+    align-self: center;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--air-status-success-5);
+    padding: 4px 8px; border-radius: 8px;
+  }
+  .pill .pk { font: 500 12px/1.35 'DM Sans', sans-serif; color: var(--air-text-primary); }
+  .pill .pico { width: 16px; height: 16px; border-radius: 6px; background: #16a394; flex: none; }
+  .pill .info { width: 16px; height: 16px; color: var(--air-text-secondary); }
+
+  .actions { display: flex; gap: 16px; width: 100%; }
+  .btn {
+    flex: 1; height: 52px; border-radius: var(--air-corner-button);
+    font: 600 15px/1 'DM Sans', sans-serif; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn.outlined { background: transparent; border: 1.5px solid var(--air-outline-default); color: var(--air-text-primary); }
+  .btn.primary { background: #000; border: none; color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* Powered by AIR (static lockup) */
+  .powered { display: flex; align-items: center; gap: 6px; opacity: 0.7; }
+  .powered span { font: 500 12px/1 'DM Sans', sans-serif; color: var(--air-text-secondary); }
+  .powered svg { display: block; }
+
+  /* ── Skeleton — applied IN PLACE via #content.loading ── */
+  @keyframes sk-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  #content.loading .logo > *,
+  #content.loading .chev > *,
+  #content.loading .pill > * { visibility: hidden; }
+
+  #content.loading .logo,
+  #content.loading .chev,
+  #content.loading .pill,
+  #content.loading .title,
+  #content.loading .k,
+  #content.loading .note p {
+    background: linear-gradient(90deg,
+      var(--air-surface-dim) 25%,
+      var(--air-container-primary) 50%,
+      var(--air-surface-dim) 75%);
+    background-size: 200% 100%;
+    animation: sk-shimmer 1.5s linear infinite;
+  }
+  #content.loading .title,
+  #content.loading .k { color: transparent; border-radius: 1000px; display: inline-block; }
+  #content.loading .note p { color: transparent; border-radius: 10px; }
+  #content.loading .note b { color: transparent; }
+  #content.loading .logo { border-radius: 16px; box-shadow: none; }
+  #content.loading .chev { border-radius: 4px; }
+  #content.loading .pill { border-radius: 8px; background-color: var(--air-surface-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #content.loading .logo,
+    #content.loading .chev,
+    #content.loading .pill,
+    #content.loading .title,
+    #content.loading .k,
+    #content.loading .note p { animation: none; background: var(--air-surface-dim); }
+  }
+
+  .toggle-btn {
+    font: 600 14px/1 'DM Sans', sans-serif; background: var(--air-button-primary); color: #fff;
+    border: none; border-radius: 999px; padding: 12px 22px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <h1 class="page-title">Skeleton loading demo</h1>
+  <p class="page-sub">Use to show a placeholder while content is loading.</p>
+
+  <button class="toggle-btn" id="replay">&#8635; Replay loading</button>
+
+  <div class="modal" id="modal" aria-busy="true" aria-label="Verification request">
+    <button class="close" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <div id="content" class="loading">
+      <div class="head">
+        <div class="logo real">
+          <img src="./air-shop-logo.png" alt="AIR Shop" />
+        </div>
+        <p class="title">Allow [AIR Shop] to verify</p>
+      </div>
+
+      <div class="data">
+        <div class="data-card">
+          <div class="row-item">
+            <div class="grow"><p class="k">Your identity data</p></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="note">
+            <p>The data will be verified by [AIR Shop] and the affiliated partners. Learn how [AIR Shop] will process and protect your data with <b>Privacy Policy</b></p>
+          </div>
+        </div>
+        <div class="pill">
+          <span class="pk">Data verified by</span>
+          <span class="pico"></span>
+          <span class="pk">zkMe</span>
+          <svg class="info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn outlined" disabled>Cancel</button>
+        <button class="btn primary" disabled>Allow</button>
+      </div>
+    </div>
+
+    <div class="powered">
+      <span>Powered by</span>
+      <svg width="46" height="14" viewBox="0 0 46 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 0L0 13h3.1l1.05-2.1h5.7L10.9 13H14L7 0zm0 4.4l1.75 3.5H5.25L7 4.4z" fill="#002536"/>
+        <path d="M16 13V0h2.9v13H16z" fill="#002536"/>
+        <path d="M21 13V0h5.4c2.6 0 4.3 1.6 4.3 4 0 1.7-.9 3-2.3 3.6L31.2 13h-3.3l-2.4-4.7h-1.6V13H21zm2.9-7.2h2.2c1.1 0 1.8-.6 1.8-1.6s-.7-1.6-1.8-1.6h-2.2v3.2z" fill="#002536"/>
+        <circle cx="40" cy="10.5" r="2.5" fill="#00C2A8"/>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modal');
+    const content = document.getElementById('content');
+    const btns = content.querySelectorAll('.btn');
+    let timer;
+    function run() {
+      clearTimeout(timer);
+      modal.setAttribute('aria-busy', 'true');
+      content.classList.add('loading');
+      btns.forEach(b => b.disabled = true);
+      timer = setTimeout(() => {
+        content.classList.remove('loading');
+        btns.forEach(b => b.disabled = false);
+        modal.setAttribute('aria-busy', 'false');
+      }, 2000);
+    }
+    document.getElementById('replay').addEventListener('click', run);
+    run();
+  </script>
+</body>
+</html>
